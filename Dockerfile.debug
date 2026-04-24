@@ -31,13 +31,20 @@ RUN cp /etc/ssl/certs/ca-certificates.crt /out/etc/ssl/certs/ca-certificates.crt
   chmod 1777 /out/var/lock && \
   chown -R 65532:65532 /out/home/nonroot
 
-FROM scratch
+FROM alpine:3.23
+
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /home/nonroot
 
-COPY --from=runtime-assets /out/ /
+COPY --from=runtime-assets /out/etc/passwd /etc/passwd
+COPY --from=runtime-assets /out/etc/group /etc/group
+COPY --from=runtime-assets /out/etc/dockervolumebackup /etc/dockervolumebackup
 COPY --from=builder /out/backup /usr/bin/backup
 
-USER 65532:65532
+RUN mkdir -p /home/nonroot && \
+  chown -R 65532:65532 /home/nonroot && \
+  chmod 1777 /tmp && \
+  chmod 1777 /var/lock
 
-ENTRYPOINT ["/usr/bin/backup", "-foreground"]
+ENTRYPOINT ["/bin/sh", "-lc", "sleep infinity"]
